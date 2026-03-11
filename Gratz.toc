@@ -1,5 +1,5 @@
 ## Author: Nick
-## Interface: 50100
+## Interface: 50400
 ## Title: Gratz
 ## Version: 1.0
 ## SavedVariables: GRATZ

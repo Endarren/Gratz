@@ -82,6 +82,7 @@ L["BG_INSERT_DESC3"] = "#e: The name the enemy faction."
 L["ENABLED"] = "Enabled"
 L["DELETE"] = "Delete"
 L["ADD_MESSAGE"] = "Add Message"
+L["TEST"] = "Test Message"
 
 L["AFK"] = "AFK"
 L["AFK_DESC"] = "Sets whether a gratz will be set if you are AFK"

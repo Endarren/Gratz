@@ -26,6 +26,12 @@
 --  * Updated for patch 5.1.
 --  *  Party gratz seem to work.
 
+-- Version 0.8.1
+
+--	*  New guild gratz handler.
+--  *  New local object neoPending
+
+
 -- ======================================================================================================================= --
 -- Local Fields
 -- ======================================================================================================================= --
@@ -42,45 +48,248 @@ local raidTimer = nil;
 local guildTimer = nil;
 local partyTimer = nil;
 local bgTimer = nil;
+local nearbyTimer = nil;
 local pendingGratzTable =	{
 								Raid			= {Achieves = {}, Earners = {}},
 								Party			= {Achieves = {}, Earners = {}},
 								Battleground	= {Achieves = {}, Earners = {}},
 								Guild			= {Achieves = {}, Earners = {}},
 								Nearby			= {Achieves = {}, Earners = {}}
-}
+							}
+
+local neoPending = {
+								Raid			= {Achieves = {}, Earners = {}},
+								Party			= {Achieves = {}, Earners = {}},
+								Battleground	= {Achieves = {}, Earners = {}},
+								Guild			= {Achieves = {}, Earners = {}},
+								Nearby			= {Achieves = {}, Earners = {}}
+					}
+								
+function Gratz:RandomRangeCheck(min, max)
+	if max == nil then
+		return false
+	end
+	if min == nil then
+		return false
+	end
+	if min > max then
+		return false
+	end
+
+
+	return true
+end
+function Gratz:AddToNeoPending(chann, earner, realm, achieve)
+	if realm == nil then
+		realm =  GetRealmName();
+	end
+	if chann == "Guild" then
+		if neoPending.Guild.Earners[earner.."_"..realm] == nil then
+			neoPending.Guild.Earners[earner.."_"..realm] = {AchievementsEarned = {}}
+			neoPending.Guild.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		else
+			neoPending.Guild.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		
+		end
+		neoPending.Guild.Achieves[achieve] = true;
+	end
+	if chann == "Party" then
+		if neoPending.Party.Earners[earner.."_"..realm] == nil then
+			neoPending.Party.Earners[earner.."_"..realm] = {AchievementsEarned = {}}
+			neoPending.Party.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		else
+			neoPending.Party.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		
+		end
+		neoPending.Party.Achieves[achieve] = true;
+	end
+	if chann == "Raid" then
+		if neoPending.Raid.Earners[earner.."_"..realm] == nil then
+			neoPending.Raid.Earners[earner.."_"..realm] = {AchievementsEarned = {}}
+			neoPending.Raid.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		else
+			neoPending.Raid.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		
+		end
+		neoPending.Raid.Achieves[achieve] = true;
+	end
+	if chann == "Battleground" then
+		if neoPending.Battleground.Earners[earner.."_"..realm] == nil then
+			neoPending.Battleground.Earners[earner.."_"..realm] = {AchievementsEarned = {}}
+			neoPending.Battleground.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		else
+			neoPending.Battleground.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		
+		end
+		neoPending.Battleground.Achieves[achieve] = true;
+	end
+	if chann == "Nearby" then
+		if neoPending.Nearby.Earners[earner.."_"..realm] == nil then
+			neoPending.Nearby.Earners[earner.."_"..realm] = {AchievementsEarned = {}}
+			neoPending.Nearby.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		else
+			neoPending.Nearby.Earners[earner.."_"..realm].AchievementsEarned[achieve] = true;
+		
+		end
+		neoPending.Nearby.Achieves[achieve] = true;
+	end
+end
+ -- ================================================================================== --
+ -- Gratz Handlers
+ -- ================================================================================== --
+ --NOT USED
+function Gratz:HandleGuildGratz()
+	
+	--Step 1:  Determine how many people got achievements.
+	earnerCount = #neoPending.Guild.Earners
+	if earnerCount == 1 then
+		--Step 2a:  Check to see if that person is on the specials list.
+		isSpecial = false
+		--Step 3a:  Check all the achievements for any on the specifics list.
+		onSpecificsList = {}
+		achievementCount = 0
+		for player, tables in pairs (neoPending.Guild.Earners) do
+			for key, val in pairs (neoPending.Guild.Earners[player].AchievementsEarned) do
+				--TODO  check if achievement is on specifics list.
+				achievementCount = achievementCount +1
+			end
+		end
+
+		--Step 4a:  Deal with any specials or specifics.
+		if isSpecial == true or #onSpecificsList ~= 0 then
+		
+		else
+			--Step 5a:  Pick a message and send it.
+			message = nil
+			--Gratz.db.profile.UseOtherGratzForGuild
+			indexmess = 0;
+
+			if Gratz.db.profile.UseOtherGratzForGuild then
+				if Gratz.db.profile.IndividualGratz ~= nil then
+					if Gratz.db.profile.GuildGratzSingle ~= nil then
+						if Gratz:RandomRangeCheck(1,#Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz) == true then
+							indexmess = random(1,#Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz)
+						end		
+					else
+						print("No gratz messages in Individual or Guild Individual")
+						--indexmess = random(1,#Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz)
+					end
+				else
+					indexmess = random(1,#Gratz.db.profile.GuildGratzSingle)
+				end
+			else
+				indexmess = random(1,#Gratz.db.profile.GuildGratzSingle)
+			end
+
+			if indexmess > #Gratz.db.profile.GuildGratzSingle then
+				message = Gratz.db.profile.IndividualGratz[indexmess-#Gratz.db.profile.GuildGratzSingle].Message
+			else
+				message = Gratz.db.profile.GuildGratzSingle[indexmess].Message
+			end
+		
+			name = strsplit("_",lastguildiename)
+			message  = string.gsub(message, "#n", name)
+			guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+			message  = string.gsub(message, "#g", guildName)
+			message  = string.gsub(message, "#x", achievementCount)
+			englishFaction, localizedFaction = UnitFactionGroup("player")
+			message  = string.gsub(message, "#f", localizedFaction)
+			message =  string.gsub(message, "#e", L["Alliance"])
+			SendChatMessage(message,"GUILD")
+		end
+		
+	else
+		--Step 2a:  Check to see if any are on the specials list.
+		onSpecialList = {}
+		for player, tables in pairs (neoPending.Guild.Earners) do
+			--TODO check for any specials.
+		end
+		--Step 3a:  Check all the achievements for any on the specifics list.
+		onSpecificsList = {}
+		for player, tables in pairs (neoPending.Guild.Earners) do
+			for key, val in pairs (neoPending.Guild.Earners[player].AchievementsEarned) do
+				--TODO  check if achievement is on specifics list.
+			end
+		end
+		--Step 4a:  Deal with any specials or specifics.
+
+		
+		if #onSpecialList ~= 0 or #onSpecificsList ~= 0 then
+			--Step 5aa:  
+
+
+		else
+			--Step 5ab:  Pick a message and send it.
+			message = nil
+			indexmess = 0;
+
+			if Gratz.db.profile.UseOtherGratzForGuild then
+				if Gratz.db.profile.GroupGratz ~= nil then
+					if Gratz.db.profile.GuildGratzGroup ~= nil then
+						indexmess = random(1,#Gratz.db.profile.GuildGratzGroup+#Gratz.db.profile.GroupGratz)
+					else
+						print("No gratz messages in Group or Guild Group")
+					end
+				else
+					indexmess = random(1,#Gratz.db.profile.GuildGratzGroup)
+				end
+			else
+				indexmess = random(1,#Gratz.db.profile.GuildGratzGroup)
+			end
+
+			if indexmess > #Gratz.db.profile.GuildGratzGroup then
+				message = Gratz.db.profile.GroupGratz[indexmess-#Gratz.db.profile.GuildGratzGroup].Message --ERROR
+			else
+				message = Gratz.db.profile.GuildGratzGroup[indexmess].Message
+			end
+		
+		
+			guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+			message  = string.gsub(message, "#g", guildName)
+			englishFaction, localizedFaction = UnitFactionGroup("player")
+			message  = string.gsub(message, "#f", localizedFaction)
+			message =  string.gsub(message, "#e", L["Alliance"])
+			SendChatMessage(message,"GUILD")
+		end
+	end
+
+neoPending.Guild = {Achieves = {}, Earners = {}}
+
+end
+
+function Gratz:PrintoutNeoPending()
+--	print("Guild")
+	for key, val in pairs (neoPending.Guild.Earners) do
+		ach = " "
+		for k, v in pairs (neoPending.Guild.Earners[key].AchievementsEarned) do
+			ach = ach.." "..k
+		end
+		lin = key .. ": "..ach 
+	--	print(lin)
+	end
+--print("Party")
+	for key, val in pairs (neoPending.Party.Earners) do
+		ach = " "
+		for k, v in pairs (neoPending.Party.Earners[key].AchievementsEarned) do
+			ach = ach.." "..k
+		end
+		lin = key .. ": "..ach 
+		--print(lin)
+	end
+	--print("Raid")
+	for key, val in pairs (neoPending.Raid.Earners) do
+		ach = " "
+		for k, v in pairs (neoPending.Raid.Earners[key].AchievementsEarned) do
+			ach = ach.." "..k
+		end
+		lin = key .. ": "..ach 
+		--print(lin)
+	end
+end
 -- ======================================================================================================================= --
 
 
-local DingGratzOptions =	{
-								type = "group",
-								name = L["DING_GROUP"],
-								args =	{
-	DingEnabled =	{
-						type = "toggle",
-						name = L["ENABLED"],
-						order = 1,
-						get = function () return Gratz.db.profile.DingOn end,
-						set = function (info, val) Gratz.db.profile.DingOn = val end
-	
-					},
-	DingGroups =	{
-						type = "multiselect",
-						name = L["DING_GROUP_DESC"],
-						values = {L["RAID"], L["PARTY"], L["BATTLEGROUND"], L["GUILD"]},
-						get = function(info, val) return true end,
-						set = function (info, Key, newValue) end, --DingChannels
-						order = 2,
-					},
-	AddDing =		{
-						type = "execute",
-						name = L["ADD_MESSAGE"],
-						order = 3,
-						func = function () Gratz:AddDing() end
-					}
 
-										}
-}
 -- ======================================================================================================================= --
 -- Group Timers
 -- ======================================================================================================================= --
@@ -133,7 +342,7 @@ function Gratz:FindDetails(GroupType)
 	if GroupType == "Raid" then
 		returnTable = {}
 		returnTable.earnernumber = #pendingGratzTable.Raid.Earners
-
+		--print("Raid Earners # "..#pendingGratzTable.Raid.Earners)
 		returnTable.specifics ={}
 
 		for akey,aval in pairs(pendingGratzTable.Raid.Achieves) do
@@ -154,63 +363,42 @@ function Gratz:FindDetails(GroupType)
 	return nil;
 end
 function Gratz:RaidAchieveTimer(something)
-	print("RAID GRATZ")
-	channelMessageSent = false;
-	details = Gratz:FindDetails("Raid")
-	messageType = 1; --Single
-	
-	if details.earnernumber  > 1 then
-		messageType = 2; --Group
-	end
-
-	
-	
-		if messageType == 1 then
-		
-			messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
-			mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
-			if pendingGratzTable.Raid.Earners[1] ~= nil then
-				name, rea = strsplit("_", pendingGratzTable.Raid.Earners[1])
-		--pendingGratzTable.Party.Earners
-				mess   = string.gsub(mess, "#n", name)
-				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-					SendChatMessage(mess,"INSTANCE_CHAT")
-				else
-					SendChatMessage(mess,"RAID")
-				end
-			
-			else
-				print("Error: There were no earners.")
-			end
-		else
-			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
-			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
-			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-				SendChatMessage(mess,"INSTANCE_CHAT")
-			else
-				SendChatMessage(mess,"RAID")
-			end
-			print("Raid Achievement message.  MessageType:  "..messageType)
-
+		--print("Raid")
+	for key, val in pairs (neoPending.Raid.Earners) do
+		ach = " "
+		for k, v in pairs (neoPending.Raid.Earners[key].AchievementsEarned) do
+			ach = ach.." "..k
 		end
+		lin = key .. ": "..ach 
+		--print(lin)
+	end
+	
+	onSpecialList = {}
+	onSpecificsList = {}
+	for player, tables in pairs (neoPending.Guild.Earners) do
+		--TODO check for any specials.
+		for key, val in pairs (neoPending.Guild.Earners[player].AchievementsEarned) do
+			--TODO  check if achievement is on specifics list.
+		end
+	end
 	
 	
-	--Are there any specials on the list?
-	--Are there any specific achieves?
-		
-		--TODO Find out if any of the 
 
+
+	channel = "RAID"
+	if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+		channel = "INSTANCE_CHAT"
+	end
 	
-	
-	
-	--Clear tables
-	pendingGratzTable.Raid.Achieves = {}
-	pendingGratzTable.Raid.Earners = {}
+
+
+	--Wipe stored.
+	neoPending.Raid = {Achieves = {}, Earners = {}}
 	raidTimer = nil;
 end
 function Gratz:PartyAchieveTimer(something)
 	channelMessageSent = false;
-	print("PARTY GRATZ")
+	--print("PARTY GRATZ")
 	--Determine what kind of gratz message to send.
 	details = Gratz:FindDetails("Party")
 	messageType = 1; --Single
@@ -219,32 +407,39 @@ function Gratz:PartyAchieveTimer(something)
 		messageType = 2; --Group
 	end
 
-	print("Specials "..#details.specials)
-	print("Specifics "..#details.specifics)
+	--print("Specials "..#details.specials)
+	--print("Specifics "..#details.specifics)
+	
 		if messageType == 1 then
-		
-			messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
-			mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
-			name, rea = nil, nil
-			for k,v in pairs (pendingGratzTable.Party.Earners) do
-				name, rea = strsplit("_", k)
-			end
+			if Gratz.db.profile.IndividualGratz ~= nil then
+				if #Gratz.db.profile.IndividualGratz ~= 0 then
+					messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
+					mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
+					name, rea = nil, nil
+					for k,v in pairs (pendingGratzTable.Party.Earners) do
+						name, rea = strsplit("_", k)
+					end
 			
-		--pendingGratzTable.Party.Earners
-			mess   = string.gsub(mess, "#n", name)
-			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-				SendChatMessage(mess,"INSTANCE_CHAT")
-			else
-				SendChatMessage(mess,"PARTY")
+				--pendingGratzTable.Party.Earners
+					mess   = string.gsub(mess, "#n", name)
+					if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+						SendChatMessage(mess,"INSTANCE_CHAT")
+					else
+						SendChatMessage(mess,"PARTY")
+					end
+				end
 			end
-
 		else
-			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
-			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
-			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-				SendChatMessage(mess,"INSTANCE_CHAT")
-			else
-				SendChatMessage(mess,"PARTY")
+			if Gratz.db.profile.GroupGratz ~= nil then
+				if #Gratz.db.profile.GroupGratz ~= 0 then
+					messageIndex = random(1,#Gratz.db.profile.GroupGratz)
+					mess = Gratz.db.profile.GroupGratz[messageIndex].Message
+					if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+						SendChatMessage(mess,"INSTANCE_CHAT")
+					else
+						SendChatMessage(mess,"PARTY")
+					end
+				end
 			end
 		end
 	
@@ -263,40 +458,46 @@ end
 
 function Gratz:BGAchieveTimer(something)
 	channelMessageSent = false;
-	print("BG GRATZ")
+--	print("BG GRATZ "..#neoPending.Battleground.Earners)
 	--Determine what kind of gratz message to send.
 	details = Gratz:FindDetails("Battleground")
 	messageType = 1; --Single
 	
-	if details.earnernumber  > 1 then
+	if #neoPending.Battleground.Earners  > 1 then
 		messageType = 2; --Group
 	end
 
 
 	
 	if messageType == 1 then
-		
-		messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
-		mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
-		name, rea = strsplit("_", pendingGratzTable.Battleground.Earners[1])
-	--pendingGratzTable.Party.Earners
-		mess   = string.gsub(mess, "#n", name)
-		if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-			SendChatMessage(mess,"INSTANCE_CHAT")
-		else
-			SendChatMessage(mess,"BATTLEGROUND")
+		if Gratz.db.profile.IndividualGratz ~= nil then
+			if #Gratz.db.profile.IndividualGratz ~= 0 then
+				messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
+				mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
+				name, rea = strsplit("_", pendingGratzTable.Battleground.Earners[1])
+			--pendingGratzTable.Party.Earners
+				mess   = string.gsub(mess, "#n", name)
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess,"INSTANCE_CHAT")
+				else
+					SendChatMessage(mess,"BATTLEGROUND")
+				end
+			end
 		end
-		
-		print("BG Achievement message.  MessageType:  "..messageType)
+		--print("BG Achievement message.  MessageType:  "..messageType)
 	else
-		messageIndex = random(1,#Gratz.db.profile.GroupGratz)
-		mess = Gratz.db.profile.GroupGratz[messageIndex].Message
-		if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
-			SendChatMessage(mess,"INSTANCE_CHAT")
-		else
-		SendChatMessage(mess,"BATTLEGROUND")
+		if Gratz.db.profile.GroupGratz ~= nil then
+			if #Gratz.db.profile.GroupGratz ~= 0 then
+				messageIndex = random(1,#Gratz.db.profile.GroupGratz)
+				mess = Gratz.db.profile.GroupGratz[messageIndex].Message
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess,"INSTANCE_CHAT")
+				else
+				SendChatMessage(mess,"BATTLEGROUND")
+				end
+			end
 		end
-		print("BG Achievement message.  MessageType:  "..messageType)
+		--print("BG Achievement message.  MessageType:  "..messageType)
 
 	end
 	
@@ -307,8 +508,8 @@ function Gratz:BGAchieveTimer(something)
 		--TODO Find out if any of the 
 
 	--Clear tables
-	pendingGratzTable.Battleground.Achieves = {}
-	pendingGratzTable.Battleground.Earners = {}
+	neoPending.Battleground.Achieves = {}
+	neoPending.Battleground.Earners= {}
 	bgTimer = nil;
 end
 
@@ -329,9 +530,21 @@ end
 
 function Gratz:AddEntryToPending(channel, name, realm, achieve)
 	--TODO fix realm nil
-
+	
 	if realm == nil then
 		realm =  GetRealmName();
+	end
+	--print("Entry "..channel.." "..name.." "..realm.." "..achieve)
+	if channel == "Guild" then
+					--Add achievement.
+					if pendingGratzTable.Guild.Achieves[achieve] == nil then
+						pendingGratzTable.Guild.Achieves[achieve] = 1
+					else
+						pendingGratzTable.Guild.Achieves[achieve] = pendingGratzTable.Guild.Achieves[achieve] +1
+					end
+					--Add the achiever.
+					pendingGratzTable.Guild.Earners[name.."_"..realm] = true;
+		
 	end
 	if channel == "Raid" then
 		--Add achievement.
@@ -342,6 +555,7 @@ function Gratz:AddEntryToPending(channel, name, realm, achieve)
 		end
 		--Add the achiever.
 		pendingGratzTable.Raid.Earners[name.."_"..realm] = true;
+--print("Adding "..name.." to Earners.  Size "..#pendingGratzTable.Raid.Earners)
 
 	else
 		if channel == "Party" then
@@ -353,7 +567,7 @@ function Gratz:AddEntryToPending(channel, name, realm, achieve)
 			end
 			--Add the achiever.
 			pendingGratzTable.Party.Earners[name.."_"..realm] = true;
-			print("Adding "..name)
+			--print("Adding "..name)
 		
 		else
 			if channel == "Battleground" then
@@ -366,17 +580,7 @@ function Gratz:AddEntryToPending(channel, name, realm, achieve)
 				--Add the achiever.
 				pendingGratzTable.Battleground.Earners[name.."_"..realm] = true;
 			else
-				if channel == "Guild" then
-					--Add achievement.
-					if pendingGratzTable.Guild.Achieves[achieve] == nil then
-						pendingGratzTable.Guild.Achieves[achieve] = 1
-					else
-						pendingGratzTable.Guild.Achieves[achieve] = pendingGratzTable.Guild.Achieves[achieve] +1
-					end
-					--Add the achiever.
-					pendingGratzTable.Guild.Earners[name.."_"..realm] = true;
-		
-				else
+				
 					if channel == "Nearby" then
 						if pendingGratzTable.Nearby.Achieves[achieve] == nil then
 							pendingGratzTable.Nearby.Achieves[achieve] = 1
@@ -388,7 +592,7 @@ function Gratz:AddEntryToPending(channel, name, realm, achieve)
 					else
 					
 					end
-				end
+				
 			end
 		end
 	end
@@ -442,7 +646,7 @@ local defaults ={	profile = {
 						BGGratz				=	{	
 												},
 						BGGratzOn = true,
-						SpecificAchievementGratz = {},
+						SpecificAchievementGratz = {}, --Ignored, SingleMessages, GroupMessages
 						AFKon = true,
 						Delay = 5,
 						MinDelay = 1,
@@ -461,191 +665,130 @@ function Gratz:IsPersonOnIgnore(name, realm)
 	end
 		return false;
 end
+-- ========================================================================================== --
+--	Specific Achievement Gratz Interface
+-- ========================================================================================== --
+local tempAchieveID = 1070;
+local specificConfig = {
+		type = "group",
+		name = "Specific Achievements",
+		args = {
+					AchieveName = {type = "description",
+	name = "",
+order = 2 },
+		AchieveDesc = {
+	type = "description",
+	name = "",
+order = 3},
+		AddAchieve = {
+			type = "execute",
+			name = "Add",
+			order = 4,
+			func = function () 
+				if GetAchievementInfo(tempAchieveID) ~= nil then
+					if Gratz.db.profile.SpecificAchievementGratz[tempAchieveID] == nil then
+						--Gratz.db.profile.SpecificAchievementGratz[tempAchieveID]
+						Gratz:AddSpecificAchieveUI (tempAchieveID)
+					end
+				end
 
+			
+			end
+			},
+		NewAchieveBox = {
+						type = "input",
+						order = 1,
+						name = "Achievement ID",
+						get = function ()  return tempAchieveID end,
+						set = function (info, val) 
+								Gratz:UpdateAchieveDesc (val)
+								end,
+						order = 1
+			
+						}
+		}
+}
+function Gratz:AddSpecificAchieveUI (key)
+	IDNumber, Name, Points, Completed, Month, Day, Year, Description, Flags, Image, RewardText = GetAchievementInfo(key)
+specificConfig.args[key] = {type = "group",
+						   order = 5,
+							name = Name,
+							args = {
+								AchieveName = {type = "description", name = Name, order = 1,icon = Image },
+								AchieveDesc = {type = "description", name = Description, order = 2},
+								DeleteAchieve = {type = "execute", name = "Delete", func = function () end,order =3},
+								SingleGroup = {type = "group", name = "Single",args ={
+									AddSingleMessage = {type = "execute",name = "Add Single",func = function()  Gratz:AddNewSingleSpecific(key) end}
+																					}
+								},
+								GroupGroup = {type = "group",name = "Group",
+									args ={AddSingleMessage = {
+									type = "execute",
+									name = "Add Group",
+									func = function() end
+								}}
+								}
+							}
+
+}
+end
+function Gratz:AddNewSingleSpecific(key)
+
+	Gratz:AddToSingleSpecificUI(key)
+end
+function Gratz:AddToSingleSpecificUI(key)
+	specificConfig.args[key].args.SingleGroup[key] = {
+			type = "group",
+			name = "BLANK",
+			args = {
+				Delete = { type = "execute", name = "Delete", func = function() end,order = 2},
+				message = {type = "input", name = "Message",set = function(info, val) end, get = function () return "EMPTY" end,order =1}
+			}
+
+	}
+	
+end
+function Gratz:UpdateAchieveDesc (val)
+	if GetAchievementInfo(val) ~= nil then
+		IDNumber, Name, Points, Completed, Month, Day, Year, Description, Flags, Image, RewardText = GetAchievementInfo(val)
+		tempAchieveID = val
+		specificConfig.args.AchieveName.name = "Name: "..Name;
+		specificConfig.args.AchieveDesc.name = Description
+	else
+		specificConfig.args.AchieveName.name = "Name: ";
+		specificConfig.args.AchieveDesc.name = ""
+	end
+end
+--IDNumber, Name, Points, Completed, Month, Day, Year, Description, Flags, Image, RewardText = GetAchievementInfo(achievementID or categoryID, index)
 
 -- ========================================================================================== --
 --	Specials
 -- ========================================================================================== --
----Fields
-local tempName = ""
-local tempRealm = ""
-local tempgratz = ""
-local tempgratz2 = ""
-
-local SpecialsOptions	=		{
-type = "group",
-name = L["SPECIALS_TITLE"],
-args =	{
-			NameBox1 =		{
-								type = "input",
-								name = L["PLAYER_NAME"],
-								get = function () return tempName end,
-								set = function (info, val) tempName = val end,
-								order = 1
-							},
-			RealmBox1 =		{
-								type = "input",
-								name = L["REALM_NAME"],
-								get = function () return tempRealm end,
-								set = function (info, val) tempRealm = val end,
-								order = 2
-							},
-			ThisRealm1 =	{
-								type = "execute",
-								name = L["THIS_REALM"],
-								order = 3,
-								func = function() tempRealm = GetRealmName() end
-							},
-			AddButton1 =	{
-								type = "execute",
-								name = L["SPECIAL_ADD_PERSON"],
-								func = function() 
-											Gratz:AddPersonToSpecials(tempName, tempRealm) 
-											tempRealm	= ""
-											tempName	= ""
-										end,
-								order = 4
-							}
-		}
-								}
-
----
--- This function adds a person to the specials list.
---@Param name The name of the achiever.
---@Param realm The realm name of the achiever.
-function Gratz:AddPersonToSpecials(name, realm)
-	key = name.."_"..realm;
-	if Gratz.db.profile.Specials[key] == nil then
-		Gratz.db.profile.Specials[key] = {Ignore = false, Whisper = false, Specific = false, SpecificList = {Single = {}, Group = {}}}
-		Gratz:AddPersonToSpecialssUI(key)
-		return true
-	else
-		return false
-	end
-end
-
-function Gratz:AddPersonToSpecialssUI(namerealm)
-	print(namerealm);
-	if SpecialsOptions.args[namerealm] == nil then
-
-		if Gratz.db.profile.Specials[namerealm] ~= nil then
-			print(namerealm);
-			SpecialsOptions.args[namerealm] =	{
-													type = "group",
-													name = namerealm,
-													agrs =	{
-																IgnoreCheck1 =	{
-																					type = "toggle",
-																					name = L["IGNORE"] ,
-																					desc = L["IGNORE_DESC"] ,
-																					get = function () return Gratz.db.profile.Specials[namerealm].Ignore end,
-																					set = function (info, val) Gratz.db.profile.Specials[namerealm].Ignore = val end,
-																					order = 1
-																				},
-																WhisperGratz1 = {
-																					type = "toggle",
-																					name = L["WHISPER"],
-																					desc = L["WHISPER_DESC"],
-																					get = function () return Gratz.db.profile.Specials[namerealm].Whisper end,
-																					set = function (info, val) Gratz.db.profile.Specials[namerealm].Whisper = val end,
-																					order = 2
-																				},
-															SpecificGratz1 =	{
-																					type = "toggle",
-																					name = L["SPECIAL_GRATZ_ON"],
-																					desc = L["SPECAL_GRATZ_ON_DESC"],
-																					get = function () return Gratz.db.profile.Specials[namerealm].Specific end,
-																					set = function (info, val) Gratz.db.profile.Specials[namerealm].Specific = val end,
-																					order = 3
-																				},
-															SpecificGratzAdd1 =	{
-																					type = "input",
-																					name = L["NEW_SPECIAL_GRATZ"],
-																					get = function() return tempgratz end,
-																					set = function (info, val) tempgratz = val end,
-																					order = 4
-															},
-															SpecificGratzAdd2 =	{
-																					type = "input",
-																					name = "Group",
-																					get = function() return tempgratz2 end,
-																					set = function (info, val) tempgratz2 = val end,
-																					order = 4
-															},
-															AddSpecificGratz1 =	{
-																					type = "execute",
-																					name = L["SPECIAL_ADD_GRATZ"],
-																					order = 5,
-																					func = function() Gratz:AddNewSpecificGratz(namerealm, tempgratz,tempgratz2)  end
-																				}
-															}
-												}
-		--Gratz:AddNewSpecificGratz(namerealm, "Gratz")
-			for k, v in pairs(Gratz.db.profile.Specials[namerealm].SpecificList) do
-				Gratz:AddNewSpecificGratz(namerealm, v.Single,v.Group);
-			end
-
-		else
-
-		end
-		
-	else
 	
-	end
+local tempspecialname = ""
 
-end	
+local specialConfig = {
+						type = "group",
+						name = "Special",
+						args = {
+						NeoNameBox = {
+										type = "input",
+										name = "Name",
+										order = 1,
+										set = function (info, val) tempspecialname = val end,
+										get = function () return tempspecialname  end
 
---- This function fills up the configuration UI list of all the 
--- special entries.
-function Gratz:FillUpSpecials()
-	for key, val in pairs (Gratz.db.profile.Specials) do
-		--Gratz:AddPersonToSpecialssUI(key)	
-	
-	end
-end
+},
+						
+						
+						
+						}
 
 
-function Gratz:AddSpecificGratz(namerealm, key)
-	SpecialsOptions.args[namerealm].args[tostring(#Gratz.db.profile.Specials.SpecificList)] =	{
-		messBoxs =	{
-						type = "input",
-						name = L["SPECIAL_MESSAGE_NAME"],
-						get = function() return Gratz.db.profile.Specials.SpecificList[key].Single end,
-						set = function (info, val) Gratz.db.profile.Specials.SpecificList[key].Single = val end,
-						order = 1,
-						width = "full"
-		},
-		messBox =	{
-						type = "input",
-						name = "Group",
-						get = function() return Gratz.db.profile.Specials.SpecificList[key].Group end,
-						set = function (info, val) Gratz.db.profile.Specials.SpecificList[key].Group = val end,
-						order = 1,
-						width = "full"
-					},
-		Delete =	{
-						type = "execute",
-						name = L["DELETE"] ,
-						func =	function () 
-								
-								end,
-						order = 2
-					}
-}
 
-end
+						}
 
-function Gratz:AddNewSpecificGratz(namerealm, messageS, messageG)
-	if Gratz.db.profile.Specials[namerealm] ~= nil then
-		tinsert(Gratz.db.profile.Specials[namerealm].SpecificList.Single, messageS)
-		tinsert(Gratz.db.profile.Specials[namerealm].SpecificList.Group, messageG)
-		key = #Gratz.db.profile.Specials[namerealm].SpecificList
-		Gratz:AddSpecificGratz(namerealm, key)
-	end
-
-end
-
-				
+			
 -- ======================================================================================================================							
 local GratzMain = {
 						type = "group",
@@ -704,7 +847,30 @@ local GratzMain = {
 																Gratz.db.profile.Delay = val 
 															end
 														end
-									}
+									},
+							TestGuildSingle = {type ="execute", name = "Test Guild Single", func = function() 
+							
+							Gratz:AddToNeoPending("Guild", "THIS IS A TEST", "TEST", 1)
+							Gratz:PrintoutNeoPending()
+							if guildTimer == nil then
+								guildTimer = Gratz:ScheduleTimer("SendGuildGratz", random(1,Gratz.db.profile.Delay), {})
+							end
+							
+							
+							
+							end},
+							TestGuildGroup = {type ="execute", name = "Test Guild Group", func = function() 
+							
+							Gratz:AddToNeoPending("Guild", "THIS IS A TEST", "TEST", 1)
+							Gratz:AddToNeoPending("Guild", "THIS IS A TEST2", "TEST2", 1)
+							Gratz:PrintoutNeoPending()
+							if guildTimer == nil then
+								guildTimer = Gratz:ScheduleTimer("SendGuildGratz", random(1,Gratz.db.profile.Delay), {})
+							end
+							
+							
+							
+							end}
 							
 							
 							
@@ -715,8 +881,38 @@ local GratzMain = {
 								}
 					}
 -- =======================================================================================================
--- Ding Gratz
+-- Ding Gratz UI
 -- ======================================================================================================================							
+local DingGratzOptions =	{
+								type = "group",
+								name = L["DING_GROUP"],
+								args =	{
+	DingEnabled =	{
+						type = "toggle",
+						name = L["ENABLED"],
+						order = 1,
+						get = function () return Gratz.db.profile.DingOn end,
+						set = function (info, val) Gratz.db.profile.DingOn = val end
+	
+					},
+	DingGroups =	{
+						type = "multiselect",
+						name = L["DING_GROUP_DESC"],
+						values = {L["RAID"], L["PARTY"], L["BATTLEGROUND"], L["GUILD"]},
+						get = function(info, val) return true end,
+						set = function (info, Key, newValue) end, --DingChannels
+						order = 2,
+					},
+	AddDing =		{
+						type = "execute",
+						name = L["ADD_MESSAGE"],
+						order = 3,
+						func = function () Gratz:AddDing() end
+					}
+
+										}
+}
+
 function Gratz:RemoveDing(index)
 	DingGratzOptions.args[tostring(index)] = nil
 	DingGratzOptions.args[tostring(#Gratz.db.profile.DingGratz)] = nil
@@ -730,8 +926,8 @@ end
 function Gratz:AddDing()
 	tinsert(Gratz.db.profile.DingGratz,{Message =L["DINGGRATZ1"]})
 	Gratz:AddDingToUI(#Gratz.db.profile.DingGratz)
-
 end
+
 function Gratz:AddDingToUI(index)
 	if key == 0 then
 		Gratz.db.profile.DingGratz[key] = nil
@@ -773,8 +969,12 @@ end
 function Gratz:FillUpDing()
 	for key, val in pairs (Gratz.db.profile.DingGratz) do
 		Gratz:AddDingToUI(key)
-	end
-	
+	end	
+end
+function Gratz:ClearDing()
+	for key, val in pairs (Gratz.db.profile.DingGratz) do
+		DingGratzOptions.args[tostring(key)] = nil
+	end	
 end
 -- =======================================================================================================
 --	Individual Gratz.
@@ -853,7 +1053,11 @@ function Gratz:FillIndividualGratzOptions()
 	end
 
 end
-
+function Gratz:ClearIndividualGratz()
+	for key, val in pairs (IndividualGratzOptions.args) do
+		IndividualGratzOptions.args[tostring(key)] = nil
+	end
+end
 
 -- =======================================================================================================
 --	Guild Gratz
@@ -869,7 +1073,7 @@ local GuildGratzMenu	=  {
 						},
 						useOnlyGuildGratz = {
 									type = "toggle",
-									name = "Only use these in guild",
+									name = "Only use guild gratz in guild",
 									
 									get = function () return Gratz.db.profile.UseOtherGratzForGuild end,
 									set = function(info, val)Gratz.db.profile.UseOtherGratzForGuild=val end
@@ -907,7 +1111,17 @@ local GuildGratzMenu	=  {
 
 
 
-					}
+}
+function Gratz:TestGuildGroupMessage (message)
+
+	mess = message
+	guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+	mess  = string.gsub(mess, "#g", guildName)
+	englishFaction, localizedFaction = UnitFactionGroup("player")
+	mess  = string.gsub(mess, "#f", localizedFaction)
+	mess =  string.gsub(mess, "#e", L["Alliance"])
+
+end
 function Gratz:AddGroupGuild (message)
 	--Gratz.db.profile.GuildGratzGroup[#Gratz.db.profile.GuildGratzGroup] = {Message = message}
 	tinsert(Gratz.db.profile.GuildGratzGroup,{Message = message})
@@ -963,12 +1177,32 @@ if Gratz.db.profile.GuildGratzGroup[key] == nil then
 																							Gratz:AddGroupGuildUI(i)
 																						end
 																			end
-																						}
+																		},
+			TestButton = {
+				name = L["TEST"],
+				type = "execute",
+				order = 4,
+				func = function() Gratz:TestGuildGroupMessage (Gratz.db.profile.GuildGratzGroup[key].Message)   end
+
+
+	}
 
 																	}
 
 
 	}
+end
+function Gratz:TestGuildSingleMessage (message)
+
+	mess = message
+	mess  = string.gsub(mess, "#n", UnitName("player") )
+	mess  = string.gsub(mess, "#x", 2)
+	guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+	mess  = string.gsub(mess, "#g", guildName)
+	englishFaction, localizedFaction = UnitFactionGroup("player")
+	mess  = string.gsub(mess, "#f", localizedFaction)
+	mess =  string.gsub(mess, "#e", L["Alliance"])
+
 end
 function Gratz:AddSingleGuild (message)
 	--tinsert(Gratz.db.profile.GuildGratzSingle,{Message = message})
@@ -1025,7 +1259,15 @@ if Gratz.db.profile.GuildGratzSingle[key] == nil then
 																							Gratz:AddSingleGuildUI(i)
 																						end
 																			end
-																						}
+																		},
+			TestButton = {
+				name = L["TEST"],
+				type = "execute",
+				order = 4,
+				func = function() Gratz:TestGuildSingleMessage (Gratz.db.profile.GuildGratzSingle[key].Message)   end
+
+
+	}
 
 																	}
 
@@ -1040,6 +1282,14 @@ function Gratz:FillUpGuildGratz()
 	end
 	for k, v in pairs (Gratz.db.profile.GuildGratzGroup) do
 		Gratz:AddGroupGuildUI (k)
+	end
+end
+function Gratz:ClearGuildGratz()
+	for k, v in pairs (GuildGratzMenu.args.SingleGuildieGratz.args) do
+		GuildGratzMenu.args.SingleGuildieGratz.args[tostring(k)] = nil
+	end
+	for k, v in pairs (GuildGratzMenu.args.GroupGuildieGratz.args) do
+		GuildGratzMenu.args.GroupGuildieGratz.args[tostring(k)] = nil
 	end
 end
 -- ===================================================================================================================
@@ -1077,7 +1327,11 @@ function Gratz:AddGroupMessage(key)
 												order = 1,
 												width = "full"
 											},
-
+								TestButton = {
+									type = "execute",
+									name = L["TEST"],
+									func = function ()Gratz:TestGroupGratz (self.db.profile.GroupGratz[key].Message )  end
+								},
 								Delete =	{
 												type = "execute",
 												name = L["DELETE"],
@@ -1096,12 +1350,29 @@ function Gratz:AddGroupMessage(key)
 
 										}
 end	
+function Gratz:TestGroupGratz (message)
+	mess = message
+	
+	
+	
+	
+	englishFaction, localizedFaction = UnitFactionGroup("player")
+	mess  = string.gsub(mess, "#f", localizedFaction)
+	mess =  string.gsub(mess, "#e", L["Alliance"])
 
+
+
+end
 function Gratz:FillGroupGratzOptions()
 	for key, val in pairs (self.db.profile.GroupGratz) do
 		Gratz:AddGroupMessage(key)
 	end
 
+end
+function Gratz:ClearGroupGratzOptions()
+	for key, val in pairs (GroupGratzOptions.args) do
+		GroupGratzOptions.args[tostring(key)] = nil
+	end
 end
 --	BG Victory
 -- =======================================================================================================
@@ -1212,6 +1483,11 @@ function Gratz:FillBGVict ()
 	 Gratz:AddBGVictToUI(index)
 	 end
 end
+function Gratz:ClearBGVict()
+	for k,v in pairs(BGVictoryOptions.args) do
+		BGVictoryOptions.args[tostring(k)] = nil
+	end
+end
 -- =======================================================================================================
 function Gratz:OnInitialize()
     -- Called when the addon is loaded
@@ -1220,19 +1496,21 @@ function Gratz:OnInitialize()
 	Gratz:FillIndividualGratzOptions();
 	Gratz:FillGroupGratzOptions()
 	Gratz:FillBGVict ()
-	Gratz:FillUpSpecials();
+	--Gratz:FillUpSpecials();
 	Gratz:FillUpDing()
 	Gratz:FillUpGuildGratz()
 	local config = LibStub("AceConfig-3.0")
 	local registry = LibStub("AceConfigRegistry-3.0")
-
+	local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
 	registry:RegisterOptionsTable("Gratz Main", GratzMain)
 	registry:RegisterOptionsTable("Individual Gratz", IndividualGratzOptions)
 	registry:RegisterOptionsTable("Group Gratz", GroupGratzOptions)
 	registry:RegisterOptionsTable("Battleground Victory", BGVictoryOptions)
-	registry:RegisterOptionsTable("Special Gratz",SpecialsOptions)
+	--registry:RegisterOptionsTable("Special Gratz",SpecialsOptions)
 	registry:RegisterOptionsTable("Ding Gratz",DingGratzOptions)
 	registry:RegisterOptionsTable("Guild Gratz",GuildGratzMenu)
+	registry:RegisterOptionsTable("Specific Achievements",specificConfig)
+	registry:RegisterOptionsTable("Profiles", profiles)
 
 
 	local dialog = LibStub("AceConfigDialog-3.0")
@@ -1241,10 +1519,12 @@ function Gratz:OnInitialize()
 							main		= dialog:AddToBlizOptions("Gratz Main", "Gratz"),
 							Ind			= dialog:AddToBlizOptions("Individual Gratz","Individual Gratz", "Gratz"),
 							gro			= dialog:AddToBlizOptions("Group Gratz","Group Gratz", "Gratz"),
-							--ding		= dialog:AddToBlizOptions("Ding Gratz","Ding Gratz", "Gratz"),
+							ding		= dialog:AddToBlizOptions("Ding Gratz","Ding Gratz", "Gratz"),
 							guild		=dialog:AddToBlizOptions("Guild Gratz","Guild Gratz", "Gratz"),
-							bg			= dialog:AddToBlizOptions("Battleground Victory","Battleground Victory", "Gratz")--,
-						--	Spe			= dialog:AddToBlizOptions("Special Gratz","Special Gratz", "Gratz")
+							bg			= dialog:AddToBlizOptions("Battleground Victory","Battleground Victory", "Gratz"),
+							--Spe			= dialog:AddToBlizOptions("Special Gratz","Special Gratz", "Gratz"),
+							Specific			= dialog:AddToBlizOptions("Specific Achievements","Specific Achievements", "Gratz"),
+		profiles = dialog:AddToBlizOptions("Profiles", "Profiles", "Gratz")
 						}
 
  
@@ -1256,9 +1536,32 @@ function Gratz:OnInitialize()
     self:RegisterEvent("CHAT_MSG_RAID")
 	self:RegisterEvent("CHAT_MSG_PARTY")
 	self:RegisterEvent("UPDATE_BATTLEFIELD_SCORE")
+	self.db.RegisterCallback(self, "OnProfileChanged", "SetupOptions")
+	self.db.RegisterCallback(self, "OnNewProfile", "SetupOptions")
+	self.db.RegisterCallback(self, "OnProfileCopied", "SetupOptions")
 	self:SecureHook("LeaveBattlefield","BGReset")
 end
-
+function Gratz:NewProfile(...)
+	print("New profile created")
+	Gratz:SetupOptions(...)
+end
+function Gratz:ProfileCopied(...)
+	print("Profile copied")
+	Gratz:SetupOptions(...)
+end
+function Gratz:SetupOptions(...)
+	Gratz:ClearIndividualGratz()
+	Gratz:FillIndividualGratzOptions();
+	Gratz:ClearGroupGratzOptions()
+	Gratz:FillGroupGratzOptions()
+	Gratz:ClearBGVict()
+	Gratz:FillBGVict ()
+	--Gratz:FillUpSpecials();
+	Gratz:ClearDing()
+	Gratz:FillUpDing()
+	Gratz:ClearGuildGratz()
+	Gratz:FillUpGuildGratz()
+end
 function Gratz:OnEnable()
     -- Called when the addon is enabled
 
@@ -1292,6 +1595,7 @@ function Gratz:CHAT_MSG_ACHIEVEMENT(event, message, sender)
 			--UnitIsSameServer
 			--sender = { strsplit("-", "Benier-Mok'nathal") }
 			Gratz:AddEntryToPending("Battleground", senderName, senderRealm, achieveID)
+			Gratz:AddToNeoPending("Battleground", senderName, senderRealm, achieveID)
 			if bgTimer == nil then
 				bgTimer = Gratz:ScheduleTimer("BGAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 			end
@@ -1301,16 +1605,20 @@ function Gratz:CHAT_MSG_ACHIEVEMENT(event, message, sender)
 		end
 		if UnitInRaid(sender) ~= nil and UnitInBattleground(sender) == nil then
 			str = str.."raid"
+			--print("Starting to add to raid")
 			Gratz:AddEntryToPending("Raid", senderName, senderRealm, achieveID)
+			Gratz:AddToNeoPending("Raid", senderName, senderRealm, achieveID)
 			if raidTimer == nil then
-				raidTimer = Gratz:ScheduleTimer("RaidAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+				raidTimer = Gratz:ScheduleTimer("SendRGratz",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 			end
 
 			
 		end
 		if UnitInParty(sender) ~= nil and UnitInRaid(sender) == nil and UnitInBattleground(sender) == nil then
 			str = str.."Party"
+			--Gratz:AddEntryToPending("Guild", achiever, GetRealmName(), achievID)
 			Gratz:AddEntryToPending("Party", senderName, senderRealm, achieveID)
+			Gratz:AddToNeoPending("Party", senderName, senderRealm, achieveID)
 			if partyTimer == nil then
 				partyTimer = Gratz:ScheduleTimer("PartyAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 			end
@@ -1319,10 +1627,15 @@ function Gratz:CHAT_MSG_ACHIEVEMENT(event, message, sender)
 		if UnitInParty(sender) == nil and UnitInRaid(sender) == nil and UnitInBattleground(sender) == nil then
 			str = str.."nearby"
 			Gratz:AddEntryToPending("Nearby", senderName, senderRealm, achieveID)
+			Gratz:AddToNeoPending("Nearby", senderName, senderRealm, achieveID)
+			if nearbyTimer == nil then
+				nearbyTimer = Gratz:ScheduleTimer("NearbyHandler",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+			end
 		end
 		
 	end
 end
+
 function Gratz:CHAT_MSG_WHISPER(...)
 	--TODO parameters and dinghandler
 	if achiever ~= UnitName("player") then
@@ -1350,82 +1663,13 @@ function Gratz:CHAT_MSG_RAID(event, message, achiever)
 	--	Gratz:DingHandlerName (achiever, "RAID")
 	end
 end
-function Gratz:SendGuildGratz (input)
-
-	guildTimer = nil;
-
-	for akey, aval in pairs (pendingGratzTable.Guild.Achieves) do
-		
-		
-	end
-	guildieCount = 0;
-	lastguildiename = nil;
-	for pkey, pval in pairs (pendingGratzTable.Guild.Earners) do
-		guildieCount = guildieCount + 1;
-		lastguildiename = pkey;
-	end
-	if guildieCount == 1 then
-
-		message = nil
-		--Gratz.db.profile.UseOtherGratzForGuild
-		indexmess = 0;
-
-		if Gratz.db.profile.UseOtherGratzForGuild then
-			indexmess = random(1,#Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz)
-		else
-			indexmess = random(1,#Gratz.db.profile.GuildGratzSingle)
-		end
-
-		if indexmess > #Gratz.db.profile.GuildGratzSingle then
-			message = Gratz.db.profile.IndividualGratz[indexmess-#Gratz.db.profile.GuildGratzSingle].Message
-		else
-			message = Gratz.db.profile.GuildGratzSingle[indexmess].Message
-		end
-		
-		name = strsplit("_",lastguildiename)
-		message  = string.gsub(message, "#n", name)
-		guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
-		message  = string.gsub(message, "#g", guildName)
-		SendChatMessage(message,"GUILD")
-	else
-
-		indexmess = 0;
-
-		if Gratz.db.profile.UseOtherGratzForGuild then
-			indexmess = random(1,#Gratz.db.profile.GuildGratzGroup+#Gratz.db.profile.GroupGratz)
-		else
-			indexmess = random(1,#Gratz.db.profile.GuildGratzGroup)
-		end
-
-		if indexmess > #Gratz.db.profile.GuildGratzGroup then
-			message = Gratz.db.profile.GroupGratz[indexmess-#Gratz.db.profile.GuildGratzGroup].Message --ERROR
-		else
-			message = Gratz.db.profile.GuildGratzGroup[indexmess].Message
-		end
-		
-		
-		guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
-		message  = string.gsub(message, "#g", guildName)
-		SendChatMessage(message,"GUILD")
-	end
-	astr = ""
-	estr = ""
-	for akey, aval in pairs (pendingGratzTable.Guild.Achieves) do
-		astr = astr .." "..akey
-	end
-	for pkey, pval in pairs (pendingGratzTable.Guild.Earners) do
-		estr = estr .." "..pkey;
-	end
-
-	pendingGratzTable.Guild.Achieves = {}
-	pendingGratzTable.Guild.Earners = {}
-end
 function Gratz:CHAT_MSG_GUILD_ACHIEVEMENT(event, message, achiever)
 	if UnitName("player") ~= achiever and (Gratz.db.profile.AFKon or  UnitIsAFK("player") == nil) and Gratz:IsPersonOnIgnore(achiever, GetRealmName()) == false then
 		
 		tim = random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay);
 		achievID, achievGUID = Gratz:ParseAchievementLink(message)
-		Gratz:AddEntryToPending("Guild", achiever, GetRealmName(), achievID)		
+		Gratz:AddToNeoPending("Guild", achiever, GetRealmName(), achievID)
+		Gratz:PrintoutNeoPending()
 		if guildTimer == nil then
 			guildTimer = Gratz:ScheduleTimer("SendGuildGratz", random(1,Gratz.db.profile.Delay), {})
 		end
@@ -1433,6 +1677,7 @@ function Gratz:CHAT_MSG_GUILD_ACHIEVEMENT(event, message, achiever)
 	end
 end
 
+--Works for regular battlegrounds.
 function Gratz:UPDATE_BATTLEFIELD_SCORE(...)
 	--local REGreenTeamName, REGreenTeamRating, REGreenNewTeamRating, REGreenMMR = GetBattlefieldTeamInfo(0);
 	--local REGoldTeamName, REGoldTeamRating, REGoldNewTeamRating, REGoldMMR = GetBattlefieldTeamInfo(1);
@@ -1444,10 +1689,16 @@ function Gratz:UPDATE_BATTLEFIELD_SCORE(...)
 				if hasSentVictoryMessageForBG == false then
 					name, instanceType, difficultyIndex, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, mapID = GetInstanceInfo()
 					if Gratz.db.profile.BGGratzOn == true then
+
 						mess  = string.gsub(Gratz.db.profile.BGGratz[random(1,#(Gratz.db.profile.BGGratz))].Message, "#b", name)
 						mess  = string.gsub(mess, "#f", localizedFaction)
 						mess =  string.gsub(mess, "#e", L["Alliance"])
-						SendChatMessage(mess, "BATTLEGROUND")
+						if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+							SendChatMessage(mess, "INSTANCE_CHAT")
+						else
+							SendChatMessage(mess, "BATTLEGROUND")
+						end
+						
 						hasSentVictoryMessageForBG = true
 					end
 				end
@@ -1461,7 +1712,11 @@ function Gratz:UPDATE_BATTLEFIELD_SCORE(...)
 						mess = string.gsub(Gratz.db.profile.BGGratz[random(1,#(Gratz.db.profile.BGGratz))].Message, "#b", name)
 						mess  = string.gsub(mess, "#f", localizedFaction)
 						mess =  string.gsub(mess, "#e", L["Horde"])
-						SendChatMessage(mess, "BATTLEGROUND")
+						if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+							SendChatMessage(mess, "INSTANCE_CHAT")
+						else
+							SendChatMessage(mess, "BATTLEGROUND")
+						end
 						hasSentVictoryMessageForBG = true
 					end
 				end
@@ -1469,7 +1724,213 @@ function Gratz:UPDATE_BATTLEFIELD_SCORE(...)
 		end
 	end
 end
+-- ========================================================================== --
+function Gratz:NearbyHandler(input)
+	nearbyTimer = nil;
+	
+	nearbyCount = 0;
+	lastNearby = nil
+	for pkey, pval in pairs (neoPending.Nearby.Earners) do
+		nearbyCount = nearbyCount + 1;
+		lastNearby = pkey;
+	end
 
+	if nearbyCount == 1 then
+		message = nil
+		--Gratz.db.profile.UseOtherGratzForGuild
+		indexmess = 0;
+
+		if Gratz.db.profile.IndividualGratz ~= nil then
+			if #Gratz.db.profile.IndividualGratz ~= 0 then
+				indexmess = random(1, #Gratz.db.profile.IndividualGratz)
+				message = Gratz.db.profile.IndividualGratz[indexmess].Message
+				name = strsplit("_",lastNearby)
+				message  = string.gsub(message, "#n", name)
+
+				SendChatMessage(message,"SAY")
+			end
+		else
+			print("Gratz: Error.  No individual gratz messages.")
+		end
+	else
+		message = nil
+		--Gratz.db.profile.UseOtherGratzForGuild
+		indexmess = 0;
+
+		if Gratz.db.profile.GroupGratz ~= nil then
+			if #Gratz.db.profile.GroupGratz ~= 0 then
+				indexmess = random(1, #Gratz.db.profile.GroupGratz)
+				message = Gratz.db.profile.GroupGratz[indexmess].Message
+				--name = strsplit("_",lastNearby)
+			--	message  = string.gsub(message, "#n", name)
+
+				SendChatMessage(message,"SAY")
+				end
+		else
+			print("Gratz: Error.  No group gratz messages.")
+		end
+	end
+
+	--neoPending.Nearby.Earners
+	neoPending.Nearby.Achieves = {}
+	neoPending.Nearby.Earners = {}
+end
+function Gratz:SendGuildGratz (input)
+
+
+
+	guildTimer = nil;
+	alist = {}
+	for akey, aval in pairs (neoPending.Guild.Achieves) do
+		--SpecificAchievementGratz
+		if Gratz.db.profile.SpecificAchievementGratz[akey] ~= nil then
+			tinsert(alist,akey)
+		end
+	end
+
+	guildieCount = 0;
+	lastguildiename = nil;
+	for pkey, pval in pairs (neoPending.Guild.Earners) do
+		guildieCount = guildieCount + 1;
+		lastguildiename = pkey;
+	end
+	if guildieCount == 1 then
+
+		if (Gratz.db.profile.UseOtherGratzForGuild == false and Gratz.db.profile.GuildGratzSingle == nil) or 
+			(Gratz.db.profile.UseOtherGratzForGuild == true and Gratz.db.profile.IndividualGratz == nil and Gratz.db.profile.GuildGratzSingle == nil) then
+			return nil
+		end
+
+		message = nil
+		--Gratz.db.profile.UseOtherGratzForGuild
+		indexmess = 0;
+
+		if Gratz.db.profile.UseOtherGratzForGuild and Gratz.db.profile.IndividualGratz ~= nil then
+			if #Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz ~= 0 then
+				indexmess = random(1,#Gratz.db.profile.GuildGratzSingle+#Gratz.db.profile.IndividualGratz)
+			end
+		else
+			if Gratz.db.profile.GuildGratzSingle ~= nil then
+				if #Gratz.db.profile.GuildGratzSingle ~= 0 then
+					indexmess = random(1,#Gratz.db.profile.GuildGratzSingle)
+				end
+			else
+				print("Gratz: Error.  No single guild gratz messages or individual messages.")
+			end
+		end
+	
+		if indexmess > #Gratz.db.profile.GuildGratzSingle then
+			if  Gratz.db.profile.IndividualGratz[indexmess-#Gratz.db.profile.GuildGratzSingle].Message ~= nil then
+				message = Gratz.db.profile.IndividualGratz[indexmess-#Gratz.db.profile.GuildGratzSingle].Message
+			else
+				print("CAUGHT ERROR 2")
+			end
+		else
+			if Gratz.db.profile.GuildGratzSingle[indexmess] ~= nil then
+				if Gratz.db.profile.GuildGratzSingle[indexmess].Message ~= nil then
+					message = Gratz.db.profile.GuildGratzSingle[indexmess].Message
+				else
+					print("ERR CAUGHT")
+				end
+			end
+		end
+		if message ~= nil then
+		name = strsplit("_",lastguildiename)
+		message  = string.gsub(message, "#n", name)
+		guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+		message  = string.gsub(message, "#g", guildName)
+		SendChatMessage(message,"GUILD")
+		end
+	else
+		if (Gratz.db.profile.UseOtherGratzForGuild == false and Gratz.db.profile.GuildGratzGroup == nil) or 
+			(Gratz.db.profile.UseOtherGratzForGuild == true and Gratz.db.profile.GroupGratz == nil and Gratz.db.profile.GuildGratzGroup == nil) then
+			return nil
+		end
+		indexmess = 0;
+
+		if Gratz.db.profile.UseOtherGratzForGuild and Gratz.db.profile.GroupGratz ~= nil then
+			if #Gratz.db.profile.GuildGratzGroup ~= 0 and #Gratz.db.profile.GroupGratz ~= 0 then
+				indexmess = random(1,#Gratz.db.profile.GuildGratzGroup+#Gratz.db.profile.GroupGratz)
+			end
+		else
+			if Gratz.db.profile.GuildGratzGroup ~= nil then
+				if #Gratz.db.profile.GuildGratzGroup+#Gratz.db.profile.GroupGratz ~= 0 then
+					indexmess = random(1,#Gratz.db.profile.GuildGratzGroup)
+				end
+			else
+				print("Gratz: Error.  No group guild gratz messages or group messages.")
+			end
+		end
+
+
+		if indexmess > #Gratz.db.profile.GuildGratzGroup then
+			message = Gratz.db.profile.GroupGratz[indexmess-#Gratz.db.profile.GuildGratzGroup].Message --ERROR
+		else
+			if Gratz.db.profile.GuildGratzGroup[indexmess] ~= nil then
+				message = Gratz.db.profile.GuildGratzGroup[indexmess].Message
+			end
+		end
+		
+		if message ~= nil and type(message) == "string" then
+		guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+		message  = string.gsub(message, "#g", guildName)
+		SendChatMessage(message,"GUILD")
+		end
+	end
+	
+
+	neoPending.Guild.Achieves = {}
+	neoPending.Guild.Earners = {}
+end
+
+function Gratz:SendRGratz (input)
+
+	RaidTimer = nil;
+
+	for akey, aval in pairs (neoPending.Raid.Achieves) do
+		
+		
+	end
+	guildieCount = 0;
+	lastguildiename = nil;
+	for pkey, pval in pairs (neoPending.Raid.Earners) do
+		guildieCount = guildieCount + 1;
+		lastguildiename = pkey;
+	end
+	--print("Number of raid gratz = "..#neoPending.Raid.Earners)
+	if #neoPending.Raid.Earners == 1 then
+
+		message = nil
+		--Gratz.db.profile.UseOtherGratzForGuild
+		indexmess = 0;
+		if #Gratz.db.profile.IndividualGratz == 0 then
+			print("Gratz:  Error.  There are no messages in individual section.  No gratz sent")
+		else
+			indexmess = random(1,#Gratz.db.profile.IndividualGratz)
+			message = Gratz.db.profile.IndividualGratz[indexmess].Message	
+			name = strsplit("_",lastguildiename)
+			message  = string.gsub(message, "#n", name)
+			--guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+			--message  = string.gsub(message, "#g", guildName)
+			SendChatMessage(message,"RAID")
+		end
+	else
+		indexmess = 0;
+		if #Gratz.db.profile.GroupGratz == 0 then
+			print("Gratz:  Error.  There are no messages in group section.  No gratz sent")
+		else
+			indexmess = random(1,#Gratz.db.profile.GroupGratz)
+			message = Gratz.db.profile.GroupGratz[indexmess].Message
+			--guildName, guildRankName, guildRankIndex = GetGuildInfo("player");
+			--message  = string.gsub(message, "#g", guildName)
+			SendChatMessage(message,"RAID")
+		end
+	end
+	
+
+	neoPending.Raid.Achieves = {}
+	neoPending.Raid.Earners = {}
+end
 -- -------skip-----------+ ID + playerguid +comp +MM+DD+Y
 --                      achievementID:playerGUID:completed:month:day:year:bits1:bits2:bits3:bits4
 --|cffffff00|Hachievement:2336:060000000279E425:1:10:14:8:4294967295:4294967295:4294967295:4294967295|h[Insane in the Membrane]|h|r
@@ -1495,7 +1956,6 @@ end
 
 
 
-
 -- ============================================================================================================== --
 -- Ding Handling.
 -- ============================================================================================================== --
@@ -1513,15 +1973,27 @@ function Gratz:DingHandlerName (dinger, channel)
 			--mess = string.gsub(mess,"#c",className)
 			--mess = string.gsub(mess,"#r",raceName)
 			if channel == "RAID" and Gratz.db.profile.DingChannels[1] == true then
-				SendChatMessage(mess, "RAID")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "RAID")
+				end
 				dingWait[dinger] = self.ScheduleTimer("RemoveDingHold", 60, dinger)
 			end
 			if channel == "PARTY" and Gratz.db.profile.DingChannels[2] == true then
-				SendChatMessage(mess, "PARTY")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "PARTY")
+				end
 				dingWait[dinger] = self.ScheduleTimer("RemoveDingHold", 60, dinger)
 			end
 			if channel == "BATTLEGROUND" and Gratz.db.profile.DingChannels[3] == true then
-				SendChatMessage(mess, "BATTLEGROUND")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "BATTLEGROUND")
+				end
 				dingWait[dinger] = self.ScheduleTimer("RemoveDingHold", 60, dinger)
 			end
 			if channel == "GUILD" and Gratz.db.profile.DingChannels[4] == true then
@@ -1540,15 +2012,27 @@ function Gratz:DingHandler (dingerGUID, channel)  --name = "Special Characters/n
 			mess = string.gsub(mess,"#c",className)
 			mess = string.gsub(mess,"#r",raceName)
 			if channel == "RAID" and Gratz.db.profile.DingChannels[1] == true then
-				SendChatMessage(mess, "RAID")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "RAID")
+				end
 				dingWait[name.."-"..realm] = self.ScheduleTimer("RemoveDingHold", 60, name.."-"..realm)
 			end
 			if channel == "PARTY" and Gratz.db.profile.DingChannels[2] == true then
-				SendChatMessage(mess, "PARTY")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "PARTY")
+				end
 				dingWait[name.."-"..realm] = self.ScheduleTimer("RemoveDingHold", 60, name.."-"..realm)
 			end
 			if channel == "BATTLEGROUND" and Gratz.db.profile.DingChannels[3] == true then
-				SendChatMessage(mess, "BATTLEGROUND")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess, "INSTANCE_CHAT")
+				else
+					SendChatMessage(mess, "BATTLEGROUND")
+				end
 				dingWait[name.."-"..realm] = self.ScheduleTimer("RemoveDingHold", 60, name.."-"..realm)
 			end
 			if channel == "GUILD" and Gratz.db.profile.DingChannels[4] == true then
