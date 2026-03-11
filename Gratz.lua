@@ -704,7 +704,14 @@ local GratzMain = {
 																Gratz.db.profile.Delay = val 
 															end
 														end
-										}
+									}
+							
+							
+							
+							
+							
+							
+
 								}
 					}
 -- =======================================================================================================
@@ -726,6 +733,10 @@ function Gratz:AddDing()
 
 end
 function Gratz:AddDingToUI(index)
+	if key == 0 then
+		Gratz.db.profile.DingGratz[key] = nil
+		return false;
+	end
 	orderi,orderf = math.modf(index/10)
 	DingGratzOptions.args[tostring(index)] =	{
 			type = "group",
@@ -786,6 +797,10 @@ local IndividualGratzOptions =		{
 }
 
 function Gratz:AddIndividualMessage(key)
+	if key == 0 then
+		Gratz.db.profile.IndividualGratz[key] = nil
+		return false;
+	end
 	if Gratz.db.profile.IndividualGratz == nil then
 		return false
 	end
@@ -894,11 +909,15 @@ local GuildGratzMenu	=  {
 
 					}
 function Gratz:AddGroupGuild (message)
-	Gratz.db.profile.GuildGratzGroup[#Gratz.db.profile.GuildGratzGroup] = {Message = message}
+	--Gratz.db.profile.GuildGratzGroup[#Gratz.db.profile.GuildGratzGroup] = {Message = message}
 	tinsert(Gratz.db.profile.GuildGratzGroup,{Message = message})
 	Gratz:AddGroupGuildUI (#Gratz.db.profile.GuildGratzGroup)
 end
 function Gratz:AddGroupGuildUI (key)
+	if key == 0 then
+		Gratz.db.profile.GuildGratzGroup[key] = nil
+		return false;
+	end
 orderi,orderf = math.modf(key/10)
 	if Gratz.db.profile.GuildGratzGroup == nil then
 		return false
@@ -952,13 +971,19 @@ if Gratz.db.profile.GuildGratzGroup[key] == nil then
 	}
 end
 function Gratz:AddSingleGuild (message)
-	Gratz.db.profile.GuildGratzSingle[#Gratz.db.profile.GuildGratzSingle] = {Message = message}
+	--tinsert(Gratz.db.profile.GuildGratzSingle,{Message = message})
+	--Gratz.db.profile.GuildGratzSingle[#Gratz.db.profile.GuildGratzSingle] = {Message = message}
 	tinsert(Gratz.db.profile.GuildGratzSingle,{Message = message})
 	Gratz:AddSingleGuildUI (#Gratz.db.profile.GuildGratzSingle)
 end
 
 
 function Gratz:AddSingleGuildUI (key)
+	if key == 0 then
+		Gratz.db.profile.GuildGratzSingle[key] = nil
+		return false;
+	end
+
 	if Gratz.db.profile.GuildGratzSingle == nil then
 		return false
 	end
