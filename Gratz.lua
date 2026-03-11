@@ -3297,7 +3297,7 @@ function Gratz:splitAtFirst(str, pattern)
 	if startIndex ~= nil then
 		return strsub(str,0,  startIndex-1), strsub(str, startIndex+strlen(pattern))
 	end
-	return nil
+	return str
 end
 -- ========================================================================== --
 -- Events
@@ -3502,7 +3502,7 @@ function Gratz:ProcessAchieve(name, realm, id, channel)
 
 	if channel == "Guild" then
 		if Gratz.db.profile.ActiveGratz[4] == false then
-			print("FAL")
+			
 			return false
 		end
 	end
