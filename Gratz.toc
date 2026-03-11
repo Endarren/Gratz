@@ -1,0 +1,9 @@
+## Author: Nick
+## Interface: 50001
+## Title: Gratz
+## Version: 1.0
+## SavedVariables: GRATZ
+embeds.xml
+Locales\frFR.lua
+Locales\enUS.lua
+Gratz.lua
