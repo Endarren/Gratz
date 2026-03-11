@@ -397,6 +397,9 @@ function Gratz:RaidAchieveTimer(something)
 	raidTimer = nil;
 end
 function Gratz:PartyAchieveTimer(something)
+	if Gratz.db.profile.ActiveGratz[1] ~= true then
+	return false
+end
 	channelMessageSent = false;
 	--print("PARTY GRATZ")
 	--Determine what kind of gratz message to send.
@@ -814,6 +817,7 @@ local GratzMain = {
 															return Gratz.db.profile.ActiveGratz[k]  
 														end,
 												set =	function (info, k, newv) 
+
 															Gratz.db.profile.ActiveGratz[k] = newv 
 														end
 									},
@@ -866,6 +870,17 @@ local GratzMain = {
 							Gratz:PrintoutNeoPending()
 							if guildTimer == nil then
 								guildTimer = Gratz:ScheduleTimer("SendGuildGratz", random(1,Gratz.db.profile.Delay), {})
+							end
+							
+							
+							
+							end},TestRaidGroup = {type ="execute", name = "Test Raid Group", func = function() 
+							
+							Gratz:AddToNeoPending("Raid", "THIS IS A TEST", "TEST", 1)
+							Gratz:AddToNeoPending("Raid", "THIS IS A TEST2", "TEST2", 1)
+							Gratz:PrintoutNeoPending()
+							if raidTimer == nil then
+									raidTimer = Gratz:ScheduleTimer("SendRGratz",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 							end
 							
 							
@@ -1591,19 +1606,22 @@ function Gratz:CHAT_MSG_ACHIEVEMENT(event, message, sender)
 		achieveID, achGUID = Gratz:ParseAchievementLink(message)
 		senderName, senderRealm = strsplit("-", sender)
 		if UnitInBattleground(sender) ~= nil then
-			str = str.."BG"
-			--UnitIsSameServer
-			--sender = { strsplit("-", "Benier-Mok'nathal") }
-			Gratz:AddEntryToPending("Battleground", senderName, senderRealm, achieveID)
-			Gratz:AddToNeoPending("Battleground", senderName, senderRealm, achieveID)
-			if bgTimer == nil then
-				bgTimer = Gratz:ScheduleTimer("BGAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+			-- {L["PARTY"],L["RAID"],L["BATTLEGROUND"],L["GUILD"], L["NEARBY"]}
+			if Gratz.db.profile.ActiveGratz[3] == true then
+				str = str.."BG"
+				--UnitIsSameServer
+				--sender = { strsplit("-", "Benier-Mok'nathal") }
+				Gratz:AddEntryToPending("Battleground", senderName, senderRealm, achieveID)
+				Gratz:AddToNeoPending("Battleground", senderName, senderRealm, achieveID)
+				if bgTimer == nil then
+					bgTimer = Gratz:ScheduleTimer("BGAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+				end
 			end
-
 			--bgTimer
 
 		end
 		if UnitInRaid(sender) ~= nil and UnitInBattleground(sender) == nil then
+			if Gratz.db.profile.ActiveGratz[2] == true then
 			str = str.."raid"
 			--print("Starting to add to raid")
 			Gratz:AddEntryToPending("Raid", senderName, senderRealm, achieveID)
@@ -1611,25 +1629,29 @@ function Gratz:CHAT_MSG_ACHIEVEMENT(event, message, sender)
 			if raidTimer == nil then
 				raidTimer = Gratz:ScheduleTimer("SendRGratz",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 			end
-
+			end
 			
 		end
 		if UnitInParty(sender) ~= nil and UnitInRaid(sender) == nil and UnitInBattleground(sender) == nil then
+			if Gratz.db.profile.ActiveGratz[1] == true then
 			str = str.."Party"
 			--Gratz:AddEntryToPending("Guild", achiever, GetRealmName(), achievID)
+
 			Gratz:AddEntryToPending("Party", senderName, senderRealm, achieveID)
 			Gratz:AddToNeoPending("Party", senderName, senderRealm, achieveID)
 			if partyTimer == nil then
 				partyTimer = Gratz:ScheduleTimer("PartyAchieveTimer",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
 			end
-
+			end
 		end
 		if UnitInParty(sender) == nil and UnitInRaid(sender) == nil and UnitInBattleground(sender) == nil then
-			str = str.."nearby"
-			Gratz:AddEntryToPending("Nearby", senderName, senderRealm, achieveID)
-			Gratz:AddToNeoPending("Nearby", senderName, senderRealm, achieveID)
-			if nearbyTimer == nil then
-				nearbyTimer = Gratz:ScheduleTimer("NearbyHandler",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+			if Gratz.db.profile.ActiveGratz[5] == true then
+				str = str.."nearby"
+				Gratz:AddEntryToPending("Nearby", senderName, senderRealm, achieveID)
+				Gratz:AddToNeoPending("Nearby", senderName, senderRealm, achieveID)
+				if nearbyTimer == nil then
+					nearbyTimer = Gratz:ScheduleTimer("NearbyHandler",random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay),{})
+				end
 			end
 		end
 		
@@ -1665,13 +1687,14 @@ function Gratz:CHAT_MSG_RAID(event, message, achiever)
 end
 function Gratz:CHAT_MSG_GUILD_ACHIEVEMENT(event, message, achiever)
 	if UnitName("player") ~= achiever and (Gratz.db.profile.AFKon or  UnitIsAFK("player") == nil) and Gratz:IsPersonOnIgnore(achiever, GetRealmName()) == false then
-		
+		if Gratz.db.profile.ActiveGratz[4] == true then
 		tim = random(Gratz.db.profile.MinDelay,Gratz.db.profile.Delay);
 		achievID, achievGUID = Gratz:ParseAchievementLink(message)
 		Gratz:AddToNeoPending("Guild", achiever, GetRealmName(), achievID)
 		Gratz:PrintoutNeoPending()
 		if guildTimer == nil then
 			guildTimer = Gratz:ScheduleTimer("SendGuildGratz", random(1,Gratz.db.profile.Delay), {})
+		end
 		end
 
 	end
@@ -1726,6 +1749,9 @@ function Gratz:UPDATE_BATTLEFIELD_SCORE(...)
 end
 -- ========================================================================== --
 function Gratz:NearbyHandler(input)
+	if Gratz.db.profile.ActiveGratz[5] ~= true then
+	return false
+end
 	nearbyTimer = nil;
 	
 	nearbyCount = 0;
@@ -1778,6 +1804,9 @@ end
 function Gratz:SendGuildGratz (input)
 
 
+if Gratz.db.profile.ActiveGratz[4] ~= true then
+	return false
+end
 
 	guildTimer = nil;
 	alist = {}
@@ -1884,7 +1913,9 @@ function Gratz:SendGuildGratz (input)
 end
 
 function Gratz:SendRGratz (input)
-
+if Gratz.db.profile.ActiveGratz[2] ~= true then
+	return false
+end
 	RaidTimer = nil;
 
 	for akey, aval in pairs (neoPending.Raid.Achieves) do
