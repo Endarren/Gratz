@@ -617,7 +617,8 @@ function Gratz:RaidQueueTimerFunc ()
 
 	--string.gsub(mess, "#n", name)
 	if NumberOfPeople > 1 then
-		print(messageA)
+		--print(messageA)
+		SendChatMessage(messageA,"RAID")
 	else
 		if Gratz.db.profile.UseRealm then
 			--peopleInTest
@@ -782,7 +783,8 @@ function Gratz:PartyQueueTimerFunc ()
 
 	--string.gsub(mess, "#n", name)
 	if NumberOfPeople > 1 then
-		print(messageA)
+		--print(messageA)
+		SendChatMessage(messageA,"PARTY")
 	else
 		if Gratz.db.profile.UseRealm then
 			--peopleInTest
@@ -940,7 +942,8 @@ function Gratz:BGQueueTimerFunc ()
 
 	--string.gsub(mess, "#n", name)
 	if NumberOfPeople > 1 then
-		print(messageA)
+		--print(messageA)
+		SendChatMessage(messageA,"RAID")
 	else
 		if Gratz.db.profile.UseRealm then
 			--peopleInTest
@@ -1099,7 +1102,8 @@ function Gratz:GuildQueueTimerFunc ()
 
 	--string.gsub(mess, "#n", name)
 	if NumberOfPeople > 1 then
-		print(messageA)
+		--print(messageA)
+		SendChatMessage(messageA,"GUILD")
 	else
 		if Gratz.db.profile.UseRealm then
 			--peopleInTest
@@ -1252,7 +1256,7 @@ function Gratz:NearbyQueueTimerFunc ()
 
 	--string.gsub(mess, "#n", name)
 	if NumberOfPeople > 1 then
-		print(messageA)
+		SendChatMessage(messageA,"SAY")
 	else
 		if Gratz.db.profile.UseRealm then
 			--peopleInTest
