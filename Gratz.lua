@@ -154,6 +154,7 @@ function Gratz:FindDetails(GroupType)
 	return nil;
 end
 function Gratz:RaidAchieveTimer(something)
+	print("RAID GRATZ")
 	channelMessageSent = false;
 	details = Gratz:FindDetails("Raid")
 	messageType = 1; --Single
@@ -172,7 +173,11 @@ function Gratz:RaidAchieveTimer(something)
 				name, rea = strsplit("_", pendingGratzTable.Raid.Earners[1])
 		--pendingGratzTable.Party.Earners
 				mess   = string.gsub(mess, "#n", name)
-				SendChatMessage(mess,"RAID")
+				if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+					SendChatMessage(mess,"INSTANCE_CHAT")
+				else
+					SendChatMessage(mess,"RAID")
+				end
 			
 			else
 				print("Error: There were no earners.")
@@ -180,7 +185,11 @@ function Gratz:RaidAchieveTimer(something)
 		else
 			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
 			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
-			SendChatMessage(mess,"RAID")
+			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+				SendChatMessage(mess,"INSTANCE_CHAT")
+			else
+				SendChatMessage(mess,"RAID")
+			end
 			print("Raid Achievement message.  MessageType:  "..messageType)
 
 		end
@@ -201,6 +210,7 @@ function Gratz:RaidAchieveTimer(something)
 end
 function Gratz:PartyAchieveTimer(something)
 	channelMessageSent = false;
+	print("PARTY GRATZ")
 	--Determine what kind of gratz message to send.
 	details = Gratz:FindDetails("Party")
 	messageType = 1; --Single
@@ -209,7 +219,7 @@ function Gratz:PartyAchieveTimer(something)
 		messageType = 2; --Group
 	end
 
-		print("Specials "..#details.specials)
+	print("Specials "..#details.specials)
 	print("Specifics "..#details.specifics)
 		if messageType == 1 then
 		
@@ -222,14 +232,20 @@ function Gratz:PartyAchieveTimer(something)
 			
 		--pendingGratzTable.Party.Earners
 			mess   = string.gsub(mess, "#n", name)
-			SendChatMessage(mess,"PARTY")
+			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+				SendChatMessage(mess,"INSTANCE_CHAT")
+			else
+				SendChatMessage(mess,"PARTY")
+			end
 
 		else
 			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
 			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
-			SendChatMessage(mess,"PARTY")
-
-
+			if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+				SendChatMessage(mess,"INSTANCE_CHAT")
+			else
+				SendChatMessage(mess,"PARTY")
+			end
 		end
 	
 	
@@ -247,6 +263,7 @@ end
 
 function Gratz:BGAchieveTimer(something)
 	channelMessageSent = false;
+	print("BG GRATZ")
 	--Determine what kind of gratz message to send.
 	details = Gratz:FindDetails("Battleground")
 	messageType = 1; --Single
@@ -264,12 +281,21 @@ function Gratz:BGAchieveTimer(something)
 		name, rea = strsplit("_", pendingGratzTable.Battleground.Earners[1])
 	--pendingGratzTable.Party.Earners
 		mess   = string.gsub(mess, "#n", name)
-		SendChatMessage(mess,"BATTLEGROUND")
+		if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+			SendChatMessage(mess,"INSTANCE_CHAT")
+		else
+			SendChatMessage(mess,"BATTLEGROUND")
+		end
+		
 		print("BG Achievement message.  MessageType:  "..messageType)
 	else
 		messageIndex = random(1,#Gratz.db.profile.GroupGratz)
 		mess = Gratz.db.profile.GroupGratz[messageIndex].Message
+		if(IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+			SendChatMessage(mess,"INSTANCE_CHAT")
+		else
 		SendChatMessage(mess,"BATTLEGROUND")
+		end
 		print("BG Achievement message.  MessageType:  "..messageType)
 
 	end
@@ -405,18 +431,15 @@ local defaults ={	profile = {
 												GUILD = true, 
 												NEARBY = true
 											},
-						IndividualGratz		= {{Message = L["INDIVIDUALGRATZ1"] }},
-						GroupGratz			= {{Message = L["GROUPGRATZ1"] }},
-						GuildGratzSingle	= {{Message = L["GUILD_SINGLE_GRATZ"]  }},
+						IndividualGratz		= {},
+						GroupGratz			= {},
+						GuildGratzSingle	= {},
 						GuildGratzGroup		= {},
 						UseOtherGratzForGuild = true,
-						DingGratz			= {{Message = L["DINGGRATZ1"]}},
+						DingGratz			= {},
 						DingOn				= true,
 						DingChannels		= {true,true,true,true},
-						BGGratz				=	{	{Message = L["BGVICT1"]},
-													{Message = L["BGVICT2"]},
-													{Message = L["BGVICT3"]},
-													{Message = L["BGVICT4"]}
+						BGGratz				=	{	
 												},
 						BGGratzOn = true,
 						SpecificAchievementGratz = {},
@@ -763,7 +786,12 @@ local IndividualGratzOptions =		{
 }
 
 function Gratz:AddIndividualMessage(key)
-	
+	if Gratz.db.profile.IndividualGratz == nil then
+		return false
+	end
+if Gratz.db.profile.IndividualGratz[key] == nil then
+		return false
+	end
 	orderi,orderf = math.modf(key/10)
 	IndividualGratzOptions.args[tostring(key)] =	{
 										type = "group",
@@ -872,6 +900,12 @@ function Gratz:AddGroupGuild (message)
 end
 function Gratz:AddGroupGuildUI (key)
 orderi,orderf = math.modf(key/10)
+	if Gratz.db.profile.GuildGratzGroup == nil then
+		return false
+	end
+if Gratz.db.profile.GuildGratzGroup[key] == nil then
+		return false
+	end
 	if key == 0 then
 	tremove(Gratz.db.profile.GuildGratzGroup,key)
 		return false
@@ -925,6 +959,12 @@ end
 
 
 function Gratz:AddSingleGuildUI (key)
+	if Gratz.db.profile.GuildGratzSingle == nil then
+		return false
+	end
+if Gratz.db.profile.GuildGratzSingle[key] == nil then
+		return false
+	end
 	orderi,orderf = math.modf(key/10)
 	GuildGratzMenu.args.SingleGuildieGratz.args[tostring(key)] = {
 															type = "group",
@@ -1091,6 +1131,12 @@ end
 -- @param index   the integer number value used to store this 
 -- Battleground Victory Message.
 function Gratz:AddBGVictToUI(index)
+	if Gratz.db.profile.BGGratz == nil then
+		return false
+	end
+if Gratz.db.profile.BGGratz[index] == nil then
+		return false
+	end
 	orderi,orderf = math.modf(index/10)
 	BGVictoryOptions.args[tostring(index)] =	{
 			type = "group",
