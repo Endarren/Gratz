@@ -98,6 +98,7 @@ L["RAID"] = "Raid"
 L["BATTLEGROUND"] = "Battleground"
 L["GUILD"] = "Guild"
 L["NEARBY"] = "Nearby"
+L["WHISPER"] = "Whisper"
 
 L["Alliance"] = "Alliance"
 L["Horde"] = "Horde"

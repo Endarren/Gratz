@@ -4,6 +4,7 @@
 ## Version: 1.0
 ## SavedVariables: GRATZ
 embeds.xml
+CallbackHandler-1.0.lua
 Locales\frFR.lua
 Locales\enUS.lua
 Gratz.lua
