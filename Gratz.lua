@@ -19,6 +19,13 @@
 -- Spam Guard
 -- BG Victory
 
+-- 
+-- ============================================================================================================ --
+--  Version 0.6  11/27/2012
+--  * Fixed the protomenu error.
+--  * Updated for patch 5.1.
+--  *  Party gratz seem to work.
+
 -- ======================================================================================================================= --
 -- Local Fields
 -- ======================================================================================================================= --
@@ -77,94 +84,16 @@ local DingGratzOptions =	{
 -- ======================================================================================================================= --
 -- Group Timers
 -- ======================================================================================================================= --
-function Gratz:RaidAchieveTimer(something)
-	channelMessageSent = false;
-	--Determine what kind of gratz message to send.
-	
-	--How many people?
-	earnercount = #pendingGratzTable.Raid.Earners;
 
-	if earnercount == 1 then
-		--Is a specific achieve there?
-		specifics = {}
-		for akey,aval in pairs(pendingGratzTable.Raid.Achieves) do
-			if Gratz.db.profile.SpecificAchievementGratz[akey] ~= nil then
-				tinsert(specifics,akey);
-			end
-		end
-		if #specifics ~= 0 then
-			--Randomly pick one.
-			--random(1,#specifics)
-			achievemessageindex = specifics[random(1,#specifics)]
-			--TODO: Compile and send message.
-
-			channelMessageSent= true;
-		end
-		--Gratz.db.profile.SpecificAchievementGratz
-		--Gratz.db.profile.Specials
-		specials = {}
-		for ekey,eval in pairs(pendingGratzTable.Raid.Earners) do
-			tinsert(specials,ekey);
-			print(eval.."  "..ekey)
-			--Gratz:SpecialWhisperGratzSingle(ekey, achievement)
-		end
-
-		if #specials ~= 0 then
-			--pick one
-			-- TODO  Whisper ones?
-			return true;
-		end
-		--No specific achievements, no special players.
-		ind =random(1,#Gratz.db.profile.IndividualGratz)
-		mess = Gratz.db.profile.IndividualGratz[ind].Message
-		--mess=string.gsub(mess, "#n", guildName)
-		SendChatMessage(mess,"RAID")
-	else
-		--GROUP MESSAGE
-
-		--Is a specific achieve there?
-		specifics = {}
-		for akey,aval in pairs(pendingGratzTable.Raid.Achieves) do
-			if Gratz.db.profile.SpecificAchievementGratz[akey] ~= nil then
-				tinsert(specifics,akey);
-			end
-		end
-		if #specifics ~= 0 then
-			--TODO Randomly pick one.
-
-			return true;
-		end
-		--Gratz.db.profile.SpecificAchievementGratz
-		--Gratz.db.profile.Specials
-		specials = {}
-		for ekey,eval in pairs(pendingGratzTable.Raid.Earners) do
-			tinsert(specials,ekey);
-			--TODO check to see if that special is an ignore or a whisper.
-		end
-		
-		if #specials ~= 0 then
-			--pick one
-			-- TODO  Whisper ones?
-			return true;
-		end
-		--No specific achievements, no special players.
-			ind =random(1,#Gratz.db.profile.GroupGratz)
-	
-		SendChatMessage(Gratz.db.profile.GroupGratz[ind].Message,"RAID")
-	end
-
-
-	--Clear tables
-	pendingGratzTable.Raid.Achieves = {}
-	pendingGratzTable.Raid.Earners = {}
-	raidTimer = nil;
-end
 
 function Gratz:FindDetails(GroupType)
 
 	if GroupType == "Party" then
 		returnTable = {}
-		returnTable.earnernumber = #pendingGratzTable.Party.Earners
+		returnTable.earnernumber = 0
+		for k,v in pairs (pendingGratzTable.Party.Earners) do
+		returnTable.earnernumber = returnTable.earnernumber +1;
+		end
 
 		returnTable.specifics ={}
 
@@ -224,7 +153,52 @@ function Gratz:FindDetails(GroupType)
 	end
 	return nil;
 end
+function Gratz:RaidAchieveTimer(something)
+	channelMessageSent = false;
+	details = Gratz:FindDetails("Raid")
+	messageType = 1; --Single
+	
+	if details.earnernumber  > 1 then
+		messageType = 2; --Group
+	end
 
+	
+	
+		if messageType == 1 then
+		
+			messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
+			mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
+			if pendingGratzTable.Raid.Earners[1] ~= nil then
+				name, rea = strsplit("_", pendingGratzTable.Raid.Earners[1])
+		--pendingGratzTable.Party.Earners
+				mess   = string.gsub(mess, "#n", name)
+				SendChatMessage(mess,"RAID")
+			
+			else
+				print("Error: There were no earners.")
+			end
+		else
+			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
+			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
+			SendChatMessage(mess,"RAID")
+			print("Raid Achievement message.  MessageType:  "..messageType)
+
+		end
+	
+	
+	--Are there any specials on the list?
+	--Are there any specific achieves?
+		
+		--TODO Find out if any of the 
+
+	
+	
+	
+	--Clear tables
+	pendingGratzTable.Raid.Achieves = {}
+	pendingGratzTable.Raid.Earners = {}
+	raidTimer = nil;
+end
 function Gratz:PartyAchieveTimer(something)
 	channelMessageSent = false;
 	--Determine what kind of gratz message to send.
@@ -235,33 +209,34 @@ function Gratz:PartyAchieveTimer(something)
 		messageType = 2; --Group
 	end
 
-	print("Party Achievement message.  MessageType:  "..messageType)
-	if #details.specials == 0 and #details.specifics == 0 then
+		print("Specials "..#details.specials)
+	print("Specifics "..#details.specifics)
 		if messageType == 1 then
 		
 			messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
 			mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
-			name, rea = strsplit("_", pendingGratzTable.Party.Earners[1])
+			name, rea = nil, nil
+			for k,v in pairs (pendingGratzTable.Party.Earners) do
+				name, rea = strsplit("_", k)
+			end
+			
 		--pendingGratzTable.Party.Earners
 			mess   = string.gsub(mess, "#n", name)
 			SendChatMessage(mess,"PARTY")
+
 		else
 			messageIndex = random(1,#Gratz.db.profile.GroupGratz)
 			mess = Gratz.db.profile.GroupGratz[messageIndex].Message
 			SendChatMessage(mess,"PARTY")
 
+
 		end
-	else
+	
 	
 	--Are there any specials on the list?
 	--Are there any specific achieves?
 		
 		--TODO Find out if any of the 
-
-	
-	
-	end
-
 
 
 	--Clear tables
@@ -273,79 +248,37 @@ end
 function Gratz:BGAchieveTimer(something)
 	channelMessageSent = false;
 	--Determine what kind of gratz message to send.
+	details = Gratz:FindDetails("Battleground")
+	messageType = 1; --Single
 	
-	--How many people?
-	earnercount = #pendingGratzTable.Battleground.Earners;
-
-	if earnercount == 1 then
-		--Is a specific achieve there?
-		specifics = {}
-		for akey,aval in pairs(pendingGratzTable.Battleground.Achieves) do
-			if Gratz.db.profile.SpecificAchievementGratz[akey] ~= nil then
-				tinsert(specifics,akey);
-			end
-		end
-		if #specifics ~= 0 then
-			--Randomly pick one.
-			--random(1,#specifics)
-			achievemessageindex = specifics[random(1,#specifics)]
-			--TODO: Compile and send message.
-
-			channelMessageSent= true;
-		end
-		--Gratz.db.profile.SpecificAchievementGratz
-		--Gratz.db.profile.Specials
-		specials = {}
-		for ekey,eval in pairs(pendingGratzTable.Battleground.Earners) do
-			tinsert(specials,ekey);
-			print(eval.."  "..ekey)
-			--Gratz:SpecialWhisperGratzSingle(ekey, achievement)
-		end
-
-		if #specials ~= 0 then
-			--pick one
-			-- TODO  Whisper ones?
-			return true;
-		end
-		--No specific achievements, no special players.
-		ind =random(1,#Gratz.db.profile.IndividualGratz)
-		mess = Gratz.db.profile.IndividualGratz[ind].Message
-		--mess=string.gsub(mess, "#n", guildName)
-		SendChatMessage(mess,"BATTLEGROUND")
-	else
-		--GROUP MESSAGE
-
-		--Is a specific achieve there?
-		specifics = {}
-		for akey,aval in pairs(pendingGratzTable.Battleground.Achieves) do
-			if Gratz.db.profile.SpecificAchievementGratz[akey] ~= nil then
-				tinsert(specifics,akey);
-			end
-		end
-		if #specifics ~= 0 then
-			--TODO Randomly pick one.
-
-			return true;
-		end
-		--Gratz.db.profile.SpecificAchievementGratz
-		--Gratz.db.profile.Specials
-		specials = {}
-		for ekey,eval in pairs(pendingGratzTable.Battleground.Earners) do
-			tinsert(specials,ekey);
-			--TODO check to see if that special is an ignore or a whisper.
-		end
-		
-		if #specials ~= 0 then
-			--pick one
-			-- TODO  Whisper ones?
-			return true;
-		end
-		--No specific achievements, no special players.
-			ind =random(1,#Gratz.db.profile.GroupGratz)
-	
-		SendChatMessage(Gratz.db.profile.GroupGratz[ind].Message,"BATTLEGROUND")
+	if details.earnernumber  > 1 then
+		messageType = 2; --Group
 	end
 
+
+	
+	if messageType == 1 then
+		
+		messageIndex = random(1,#Gratz.db.profile.IndividualGratz)
+		mess = Gratz.db.profile.IndividualGratz[messageIndex].Message
+		name, rea = strsplit("_", pendingGratzTable.Battleground.Earners[1])
+	--pendingGratzTable.Party.Earners
+		mess   = string.gsub(mess, "#n", name)
+		SendChatMessage(mess,"BATTLEGROUND")
+		print("BG Achievement message.  MessageType:  "..messageType)
+	else
+		messageIndex = random(1,#Gratz.db.profile.GroupGratz)
+		mess = Gratz.db.profile.GroupGratz[messageIndex].Message
+		SendChatMessage(mess,"BATTLEGROUND")
+		print("BG Achievement message.  MessageType:  "..messageType)
+
+	end
+	
+	
+	--Are there any specials on the list?
+	--Are there any specific achieves?
+		
+		--TODO Find out if any of the 
 
 	--Clear tables
 	pendingGratzTable.Battleground.Achieves = {}
@@ -394,6 +327,7 @@ function Gratz:AddEntryToPending(channel, name, realm, achieve)
 			end
 			--Add the achiever.
 			pendingGratzTable.Party.Earners[name.."_"..realm] = true;
+			print("Adding "..name)
 		
 		else
 			if channel == "Battleground" then
@@ -474,7 +408,7 @@ local defaults ={	profile = {
 						IndividualGratz		= {{Message = L["INDIVIDUALGRATZ1"] }},
 						GroupGratz			= {{Message = L["GROUPGRATZ1"] }},
 						GuildGratzSingle	= {{Message = L["GUILD_SINGLE_GRATZ"]  }},
-						GuildGratzGroup		= {{Message = L["GUILD_GROUP_GRATZ"]}},
+						GuildGratzGroup		= {},
 						UseOtherGratzForGuild = true,
 						DingGratz			= {{Message = L["DINGGRATZ1"]}},
 						DingOn				= true,
@@ -937,18 +871,22 @@ function Gratz:AddGroupGuild (message)
 	Gratz:AddGroupGuildUI (#Gratz.db.profile.GuildGratzGroup)
 end
 function Gratz:AddGroupGuildUI (key)
-	orderi,orderf = math.modf(key/10)
+orderi,orderf = math.modf(key/10)
+	if key == 0 then
+	tremove(Gratz.db.profile.GuildGratzGroup,key)
+		return false
+	end
 	GuildGratzMenu.args.GroupGuildieGratz.args[tostring(key)] = {
 															type = "group",
 															name = key..". "..Gratz.db.profile.GuildGratzGroup[key].Message,
-															order =2+orderi,
-															args = {
+															order = 2+orderi,
+		args = {
 																		MessageBox = {
 																				type = "input",
 																				name = "Message",
 																				get = function () return Gratz.db.profile.GuildGratzGroup[key].Message end,
 																				set = function (info, val) 
-																					protomenu.args.gu.args.GuildGratzGroup.args[tostring(key)].name = key..". "..val
+																					GuildGratzMenu.args.GroupGuildieGratz.args[tostring(key)].name = key..". "..val
 																					Gratz.db.profile.GuildGratzGroup[key].Message = val end,
 																			order = 1,
 																			width = "full"
@@ -964,11 +902,11 @@ function Gratz:AddGroupGuildUI (key)
 																			order = 3,
 																			func = function () 
 																			
-																						GuildGratzMenu.args[tostring(key)] = nil	--Remove this one from the list in the UI.
-																						GuildGratzMenu.args[tostring(#Gratz.db.profile.GuildGratzGroup)] = nil --Remove the last one from UI.
+																						GuildGratzMenu.args.GroupGuildieGratz.args[tostring(key)] = nil	--Remove this one from the list in the UI.
+																						GuildGratzMenu.args.GroupGuildieGratz.args[tostring(#Gratz.db.profile.GuildGratzGroup)] = nil --Remove the last one from UI.
 																						tremove(Gratz.db.profile.GuildGratzGroup,key)	-- Remove from DB
 																						for i = key, #Gratz.db.profile.GuildGratzGroup  do --Reposition
-																							GuildGratzMenu.args[tostring(i)] = nil
+																							GuildGratzMenu.args.GroupGuildieGratz.args[tostring(i)] = nil
 																							Gratz:AddGroupGuildUI(i)
 																						end
 																			end
@@ -978,7 +916,7 @@ function Gratz:AddGroupGuildUI (key)
 
 
 	}
-end				
+end
 function Gratz:AddSingleGuild (message)
 	Gratz.db.profile.GuildGratzSingle[#Gratz.db.profile.GuildGratzSingle] = {Message = message}
 	tinsert(Gratz.db.profile.GuildGratzSingle,{Message = message})
